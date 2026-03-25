@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: qpms
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+```
+
+Press **Cmd + S** to save.
+
+---
+
+**Step 2 — Create a `Procfile`** (no extension, just `Procfile`)
+```
+web: gunicorn app:app
