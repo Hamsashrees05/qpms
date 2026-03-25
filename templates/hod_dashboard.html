@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HOD Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark px-4">
+  <span class="navbar-brand">QPMS - HOD Panel</span>
+  <div>
+    <span class="text-white me-3">👋 {{session['user_name']}}</span>
+    <a href="/logout" class="btn btn-outline-light btn-sm">Logout</a>
+  </div>
+</nav>
+<div class="container mt-4">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+      <div class="alert alert-{{cat}}">{{msg}}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <h4 class="mb-3">Question Papers for Review</h4>
+
+  {% for paper in papers %}
+  <div class="card mb-3 shadow-sm">
+    <div class="card-header d-flex justify-content-between">
+      <strong>{{paper.subject}} — {{paper.exam_type}} ({{paper.semester}})</strong>
+      <span>Teacher: {{paper.teacher.name}}</span>
+    </div>
+    <div class="card-body">
+      <pre class="bg-light p-3 rounded">{{paper.questions}}</pre>
+      {% if paper.status == 'submitted' %}
+      <form method="POST" action="/hod/review/{{paper.id}}">
+        <div class="mb-2">
+          <label class="form-label">Comments</label>
+          <textarea name="comments" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="d-flex gap-2">
+          <button name="decision" value="approved" class="btn btn-success">✅ Approve</button>
+          <button name="decision" value="rejected" class="btn btn-danger">❌ Reject</button>
+        </div>
+      </form>
+      {% else %}
+        <span class="badge bg-{% if paper.status == 'approved' %}success{% else %}danger{% endif %} fs-6">
+          {{paper.status | capitalize}}
+        </span>
+        {% if paper.hod_comments %}
+          <p class="mt-2 text-muted">Comments: {{paper.hod_comments}}</p>
+        {% endif %}
+        {% if paper.pdf_path %}
+          <a href="/download/{{paper.id}}" class="btn btn-sm btn-outline-primary mt-2">Download PDF</a>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+</div>
+</body>
+</html>
