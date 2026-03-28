@@ -1,17 +1,22 @@
 from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import cm
 from urllib.parse import quote_plus
-import os, json
+from datetime import datetime, timedelta
+import os, json, random, string
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')
+
+# ── SESSION TIMEOUT (30 minutes) ──
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 
 # ── DATABASE CONNECTION ──
 password = quote_plus(os.getenv('MYSQL_PASSWORD'))
@@ -22,15 +27,27 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+# ── MAIL CONFIG ──
+app.config['MAIL_SERVER']   = 'smtp.gmail.com'
+app.config['MAIL_PORT']     = 587
+app.config['MAIL_USE_TLS']  = True
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_EMAIL')
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+mail = Mail(app)
+
 # ── DATABASE MODELS ──
 class User(db.Model):
-    __tablename__ = 'users'
-    id         = db.Column(db.Integer, primary_key=True)
-    name       = db.Column(db.String(100), nullable=False)
-    email      = db.Column(db.String(150), unique=True, nullable=False)
-    password   = db.Column(db.String(255), nullable=False)
-    role       = db.Column(db.Enum('admin','teacher','hod'), nullable=False)
-    created_at = db.Column(db.DateTime, server_default=db.func.now())
+    __tablename__    = 'users'
+    id               = db.Column(db.Integer, primary_key=True)
+    name             = db.Column(db.String(100), nullable=False)
+    email            = db.Column(db.String(150), unique=True, nullable=False)
+    password         = db.Column(db.String(255), nullable=False)
+    role             = db.Column(db.Enum('admin','teacher','hod'), nullable=False)
+    otp              = db.Column(db.String(6))
+    otp_expiry       = db.Column(db.DateTime)
+    failed_attempts  = db.Column(db.Integer, default=0)
+    is_blocked       = db.Column(db.Boolean, default=False)
+    created_at       = db.Column(db.DateTime, server_default=db.func.now())
 
 class Template(db.Model):
     __tablename__ = 'template'
@@ -42,24 +59,47 @@ class Template(db.Model):
 
 class QuestionPaper(db.Model):
     __tablename__ = 'question_papers'
-    id           = db.Column(db.Integer, primary_key=True)
-    teacher_id   = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    subject      = db.Column(db.String(200))
-    course_code  = db.Column(db.String(50))
-    semester     = db.Column(db.String(50))
-    exam_type    = db.Column(db.String(100))
-    duration     = db.Column(db.String(50))
-    max_marks    = db.Column(db.Integer, default=0)
-    questions    = db.Column(db.Text)
-    status       = db.Column(db.Enum('draft','submitted','approved','rejected'), default='draft')
-    hod_comments = db.Column(db.Text)
-    pdf_path     = db.Column(db.String(255))
-    created_at   = db.Column(db.DateTime, server_default=db.func.now())
-    teacher      = db.relationship('User', backref='papers')
+    id            = db.Column(db.Integer, primary_key=True)
+    teacher_id    = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    subject       = db.Column(db.String(200))
+    course_code   = db.Column(db.String(50))
+    department    = db.Column(db.String(100))
+    academic_year = db.Column(db.String(20))
+    semester      = db.Column(db.String(50))
+    exam_type     = db.Column(db.String(100))
+    duration      = db.Column(db.String(50))
+    max_marks     = db.Column(db.Integer, default=0)
+    questions     = db.Column(db.Text)
+    status        = db.Column(db.Enum('draft','submitted','approved','rejected'), default='draft')
+    hod_comments  = db.Column(db.Text)
+    pdf_path      = db.Column(db.String(255))
+    created_at    = db.Column(db.DateTime, server_default=db.func.now())
+    teacher       = db.relationship('User', backref='papers')
 
 # ── HELPERS ──
 def valid_email(email):
     return email.endswith('@bmsit.in') or email.endswith('@bmsit')
+
+def generate_otp():
+    return ''.join(random.choices(string.digits, k=6))
+
+def send_email(to, subject, body):
+    try:
+        msg = Message(subject,
+                      sender=os.getenv('MAIL_EMAIL'),
+                      recipients=[to])
+        msg.body = body
+        mail.send(msg)
+        return True
+    except Exception as e:
+        print(f"Email error: {e}")
+        return False
+
+# ── SESSION TIMEOUT ──
+@app.before_request
+def check_session_timeout():
+    if 'user_id' in session:
+        session.permanent = True
 
 # ── AUTH ROUTES ──
 @app.route('/')
@@ -71,20 +111,159 @@ def login():
     if request.method == 'POST':
         email    = request.form['email'].strip().lower()
         password = request.form['password']
+
         if not valid_email(email):
             flash('Email must end with @bmsit.in', 'danger')
             return render_template('login.html')
+
         user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
+
+        if not user:
+            flash('Invalid email or password', 'danger')
+            return render_template('login.html')
+
+        # Check if blocked
+        if user.is_blocked:
+            flash('Your account is blocked due to too many failed attempts. Contact admin.', 'danger')
+            return render_template('login.html')
+
+        if check_password_hash(user.password, password):
+            # Reset failed attempts on success
+            user.failed_attempts = 0
+            db.session.commit()
+
+            # Generate OTP
+            otp = generate_otp()
+            user.otp        = otp
+            user.otp_expiry = datetime.now() + timedelta(minutes=5)
+            db.session.commit()
+
+            # Send OTP email
+            send_email(
+    os.getenv('MAIL_EMAIL'),
+    'QPMS Login OTP',
+    f'Hello {user.name},\n\nYour OTP for QPMS login is: {otp}\n\nThis OTP is valid for 5 minutes.\n\nDo not share this OTP with anyone.'
+)
+            # Store temp session for OTP verification
+            session['otp_user_id'] = user.id
+            flash('OTP sent to your email!', 'success')
+            return redirect(url_for('verify_otp'))
+        else:
+            # Wrong password
+            user.failed_attempts += 1
+            if user.failed_attempts >= 3:
+                user.is_blocked = True
+                db.session.commit()
+                flash('Account blocked after 3 failed attempts. Contact admin.', 'danger')
+            else:
+                db.session.commit()
+                remaining = 3 - user.failed_attempts
+                flash(f'Wrong password! {remaining} attempt(s) remaining.', 'danger')
+
+    return render_template('login.html')
+
+@app.route('/verify-otp', methods=['GET','POST'])
+def verify_otp():
+    if 'otp_user_id' not in session:
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        entered_otp = request.form['otp'].strip()
+        user = User.query.get(session['otp_user_id'])
+
+        if not user:
+            return redirect(url_for('login'))
+
+        if datetime.now() > user.otp_expiry:
+            flash('OTP expired! Please login again.', 'danger')
+            session.pop('otp_user_id', None)
+            return redirect(url_for('login'))
+
+        if entered_otp == user.otp:
+            # Clear OTP
+            user.otp        = None
+            user.otp_expiry = None
+            db.session.commit()
+
+            # Set full session
+            session.pop('otp_user_id', None)
             session['user_id']   = user.id
             session['user_name'] = user.name
             session['role']      = user.role
+            session.permanent    = True
+
             if user.role == 'admin':   return redirect(url_for('admin_dashboard'))
             if user.role == 'teacher': return redirect(url_for('teacher_dashboard'))
             if user.role == 'hod':     return redirect(url_for('hod_dashboard'))
         else:
-            flash('Invalid email or password', 'danger')
-    return render_template('login.html')
+            flash('Invalid OTP! Please try again.', 'danger')
+
+    return render_template('verify_otp.html')
+
+@app.route('/forgot-password', methods=['GET','POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form['email'].strip().lower()
+
+        if not valid_email(email):
+            flash('Email must end with @bmsit.in', 'danger')
+            return render_template('forgot_password.html')
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            otp = generate_otp()
+            user.otp        = otp
+            user.otp_expiry = datetime.now() + timedelta(minutes=10)
+            db.session.commit()
+            send_email(
+                user.email,
+                'QPMS Password Reset OTP',
+                f'Hello {user.name},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.\n\nIf you did not request this, ignore this email.'
+            )
+        flash('If your email exists, an OTP has been sent!', 'success')
+        session['reset_email'] = email
+        return redirect(url_for('reset_password'))
+
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password', methods=['GET','POST'])
+def reset_password():
+    if 'reset_email' not in session:
+        return redirect(url_for('forgot_password'))
+
+    if request.method == 'POST':
+        otp          = request.form['otp'].strip()
+        new_password = request.form['new_password']
+        confirm      = request.form['confirm_password']
+
+        if new_password != confirm:
+            flash('Passwords do not match!', 'danger')
+            return render_template('reset_password.html')
+
+        user = User.query.filter_by(email=session['reset_email']).first()
+
+        if not user:
+            flash('User not found!', 'danger')
+            return redirect(url_for('forgot_password'))
+
+        if datetime.now() > user.otp_expiry:
+            flash('OTP expired! Please try again.', 'danger')
+            return redirect(url_for('forgot_password'))
+
+        if otp == user.otp:
+            user.password       = generate_password_hash(new_password)
+            user.otp            = None
+            user.otp_expiry     = None
+            user.failed_attempts = 0
+            user.is_blocked     = False
+            db.session.commit()
+            session.pop('reset_email', None)
+            flash('Password reset successfully! Please login.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Invalid OTP!', 'danger')
+
+    return render_template('reset_password.html')
 
 @app.route('/logout')
 def logout():
@@ -129,6 +308,17 @@ def add_user():
     flash('User added successfully!', 'success')
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/unblock/<int:user_id>')
+def unblock_user(user_id):
+    if session.get('role') != 'admin': return redirect(url_for('login'))
+    user = User.query.get(user_id)
+    if user:
+        user.is_blocked     = False
+        user.failed_attempts = 0
+        db.session.commit()
+        flash(f'{user.name} unblocked successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 # ── TEACHER ROUTES ──
 @app.route('/teacher')
 def teacher_dashboard():
@@ -143,25 +333,29 @@ def create_paper():
     if session.get('role') != 'teacher': return redirect(url_for('login'))
     template = Template.query.first()
     if request.method == 'POST':
-        subject     = request.form['subject']
-        course_code = request.form['course_code']
-        semester    = request.form['semester']
-        exam_type   = request.form['exam_type']
-        duration    = request.form['duration']
-        max_marks   = request.form.get('max_marks', 0)
-        questions   = request.form['questions']
-        action      = request.form['action']
-        status      = 'submitted' if action == 'submit' else 'draft'
+        subject       = request.form['subject']
+        course_code   = request.form['course_code']
+        department    = request.form['department']
+        academic_year = request.form['academic_year']
+        semester      = request.form['semester']
+        exam_type     = request.form['exam_type']
+        duration      = request.form['duration']
+        max_marks     = request.form.get('max_marks', 0)
+        questions     = request.form['questions']
+        action        = request.form['action']
+        status        = 'submitted' if action == 'submit' else 'draft'
         paper = QuestionPaper(
-            teacher_id  = session['user_id'],
-            subject     = subject,
-            course_code = course_code,
-            semester    = semester,
-            exam_type   = exam_type,
-            duration    = duration,
-            max_marks   = int(max_marks) if max_marks else 0,
-            questions   = questions,
-            status      = status
+            teacher_id    = session['user_id'],
+            subject       = subject,
+            course_code   = course_code,
+            department    = department,
+            academic_year = academic_year,
+            semester      = semester,
+            exam_type     = exam_type,
+            duration      = duration,
+            max_marks     = int(max_marks) if max_marks else 0,
+            questions     = questions,
+            status        = status
         )
         db.session.add(paper)
         db.session.commit()
@@ -194,6 +388,22 @@ def review_paper(paper_id):
     paper.status       = request.form['decision']
     paper.hod_comments = request.form['comments']
     db.session.commit()
+
+    # Send email notification to teacher
+    teacher = User.query.get(paper.teacher_id)
+    if teacher:
+        status_word = 'APPROVED ✅' if paper.status == 'approved' else 'REJECTED ❌'
+        send_email(
+            teacher.email,
+            f'QPMS - Your Question Paper has been {paper.status.capitalize()}',
+            f'Hello {teacher.name},\n\n'
+            f'Your question paper for {paper.subject} ({paper.exam_type}) '
+            f'has been {status_word} by the HOD.\n\n'
+            f'HOD Comments: {paper.hod_comments or "No comments"}\n\n'
+            f'Please login to QPMS to view and download your paper.\n\n'
+            f'Regards,\nBMSIT Question Paper Management System'
+        )
+
     flash(f'Paper {paper.status}!', 'success')
     return redirect(url_for('hod_dashboard'))
 
@@ -242,17 +452,19 @@ def generate_pdf(paper_id):
 
     # ── PAPER INFO ──
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(1*cm,    height-4.1*cm, f"Subject     : {paper.subject}")
-    c.drawString(1*cm,    height-4.7*cm, f"Course Code : {paper.course_code or '-'}")
-    c.drawString(1*cm,    height-5.3*cm, f"Semester    : {paper.semester}")
+    c.drawString(1*cm,    height-4.1*cm, f"Subject       : {paper.subject}")
+    c.drawString(1*cm,    height-4.7*cm, f"Course Code   : {paper.course_code or '-'}")
+    c.drawString(1*cm,    height-5.3*cm, f"Department    : {paper.department or '-'}")
+    c.drawString(1*cm,    height-5.9*cm, f"Academic Year : {paper.academic_year or '-'}")
     c.drawString(width/2, height-4.1*cm, f"Exam Type : {paper.exam_type}")
-    c.drawString(width/2, height-4.7*cm, f"Duration  : {paper.duration or '-'}")
-    c.drawString(width/2, height-5.3*cm, f"Max Marks : {paper.max_marks or '-'}")
-    c.drawString(width/2, height-5.9*cm, f"Teacher   : {paper.teacher.name}")
-    c.line(1*cm, height-6.3*cm, width-1*cm, height-6.3*cm)
+    c.drawString(width/2, height-4.7*cm, f"Semester  : {paper.semester}")
+    c.drawString(width/2, height-5.3*cm, f"Duration  : {paper.duration or '-'}")
+    c.drawString(width/2, height-5.9*cm, f"Max Marks : {paper.max_marks or '-'}")
+    c.drawString(width/2, height-6.5*cm, f"Teacher   : {paper.teacher.name}")
+    c.line(1*cm, height-6.9*cm, width-1*cm, height-6.9*cm)
 
     # ── TABLE SETUP ──
-    y         = height - 7.0*cm
+    y         = height - 7.5*cm
     margin    = 1*cm
     col_sl    = 1.2*cm
     col_marks = 2.0*cm
@@ -309,11 +521,7 @@ def generate_pdf(paper_id):
     def check_new_page(y):
         if y < 5*cm:
             c.showPage()
-            c.setFont("Helvetica-Bold", 10)
-            c.drawCentredString(width/2, height-1*cm,
-                                "BMS INSTITUTE OF TECHNOLOGY & MANAGEMENT (Continued)")
-            c.line(1*cm, height-1.4*cm, width-1*cm, height-1.4*cm)
-            return height - 2*cm
+            return height - 1*cm
         return y
 
     # ── DRAW QUESTIONS ──
