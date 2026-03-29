@@ -467,48 +467,52 @@ def generate_pdf(paper_id):
     y         = height - 7.5*cm
     margin    = 1*cm
     col_sl    = 1.2*cm
-    col_marks = 2.0*cm
-    col_rbtco = 2.5*cm
-    col_q     = width - (2*margin) - col_sl - col_marks - col_rbtco
+    col_rbt   = 2.5*cm
+    col_co    = 1.5*cm
+    col_marks = 1.8*cm
+    col_q     = width - (2*margin) - col_sl - col_rbt - col_co - col_marks
     x_sl      = 1*cm
-    x_q       = x_sl    + col_sl
-    x_marks   = x_q     + col_q
-    x_rbtco   = x_marks + col_marks
+    x_q       = x_sl   + col_sl
+    x_rbt     = x_q    + col_q
+    x_co      = x_rbt  + col_rbt
+    x_marks   = x_co   + col_co
     row_h     = 0.7*cm
 
     def draw_table_header(y):
         c.setFillColorRGB(0.23, 0.27, 0.49)
         c.rect(x_sl, y - row_h,
-               col_sl + col_q + col_marks + col_rbtco,
+               col_sl + col_q + col_rbt + col_co + col_marks,
                row_h, fill=1, stroke=0)
         c.setFillColorRGB(1, 1, 1)
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(x_sl + col_sl/2,       y - row_h + 0.2*cm, "Sl No.")
-        c.drawString(x_q + 0.2*cm,                 y - row_h + 0.2*cm, "Question")
+        c.drawCentredString(x_sl  + col_sl/2,  y - row_h + 0.2*cm, "Sl No.")
+        c.drawString(x_q + 0.2*cm,             y - row_h + 0.2*cm, "Question")
+        c.drawCentredString(x_rbt + col_rbt/2, y - row_h + 0.2*cm, "Bloom's Level")
+        c.drawCentredString(x_co  + col_co/2,  y - row_h + 0.2*cm, "CO")
         c.drawCentredString(x_marks + col_marks/2, y - row_h + 0.2*cm, "Marks")
-        c.drawCentredString(x_rbtco + col_rbtco/2, y - row_h + 0.2*cm, "RBT/CO")
         c.setFillColorRGB(0, 0, 0)
         return y - row_h
 
-    def draw_row(y, sl, question_text, marks, rbtco, is_alt=False):
+    def draw_row(y, sl, question_text, rbt, co, marks, is_alt=False):
         if is_alt:
             c.setFillColorRGB(0.95, 0.95, 1.0)
         else:
             c.setFillColorRGB(1, 1, 1)
         c.rect(x_sl, y - row_h,
-               col_sl + col_q + col_marks + col_rbtco,
+               col_sl + col_q + col_rbt + col_co + col_marks,
                row_h, fill=1, stroke=0)
         c.setFillColorRGB(0, 0, 0)
         c.setStrokeColorRGB(0.8, 0.8, 0.8)
         c.rect(x_sl, y - row_h,
-               col_sl + col_q + col_marks + col_rbtco,
+               col_sl + col_q + col_rbt + col_co + col_marks,
                row_h, fill=0, stroke=1)
         c.setFont("Helvetica", 9)
-        c.drawCentredString(x_sl + col_sl/2,       y - row_h + 0.2*cm, str(sl))
-        q_text = question_text[:90] + '...' if len(question_text) > 90 else question_text
-        c.drawString(x_q + 0.2*cm,                 y - row_h + 0.2*cm, q_text)
+        c.drawCentredString(x_sl  + col_sl/2,  y - row_h + 0.2*cm, str(sl))
+        q_text = question_text[:80] + '...' if len(question_text) > 80 else question_text
+        c.drawString(x_q + 0.2*cm,             y - row_h + 0.2*cm, q_text)
+        c.drawCentredString(x_rbt + col_rbt/2, y - row_h + 0.2*cm, str(rbt))
+        c.drawCentredString(x_co  + col_co/2,  y - row_h + 0.2*cm, str(co))
         c.drawCentredString(x_marks + col_marks/2, y - row_h + 0.2*cm, str(marks))
-        c.drawCentredString(x_rbtco + col_rbtco/2, y - row_h + 0.2*cm, str(rbtco))
         return y - row_h
 
     def draw_or_divider(y):
@@ -547,14 +551,14 @@ def generate_pdf(paper_id):
         if main:
             if not main.get('hasSub'):
                 y = check_new_page(y)
-                rbtco = f"{main.get('rbt','-')}/{main.get('co','-')}"
-                y = draw_row(y, 1, main.get('text',''), main.get('marks','-'), rbtco)
+                y = draw_row(y, 1, main.get('text',''),
+                            main.get('rbt','-'), main.get('co','-'), main.get('marks','-'))
             else:
                 for idx, sub in enumerate(main.get('subQuestions', [])):
                     y = check_new_page(y)
-                    rbtco = f"{sub.get('rbt','-')}/{sub.get('co','-')}"
-                    text  = f"{sub.get('label','')}. {sub.get('text','')}"
-                    y = draw_row(y, idx+1, text, sub.get('marks','-'), rbtco)
+                    text = f"{sub.get('label','')}. {sub.get('text','')}"
+                    y = draw_row(y, idx+1, text,
+                                sub.get('rbt','-'), sub.get('co','-'), sub.get('marks','-'))
 
         y = check_new_page(y)
         y = draw_or_divider(y)
@@ -573,8 +577,8 @@ def generate_pdf(paper_id):
         if alt:
             if not alt.get('hasSub'):
                 y = check_new_page(y)
-                rbtco = f"{alt.get('rbt','-')}/{alt.get('co','-')}"
-                y = draw_row(y, 1, alt.get('text',''), alt.get('marks','-'), rbtco, is_alt=True)
+                y = draw_row(y, 1, alt.get('text',''),
+                            alt.get('rbt','-'), alt.get('co','-'), alt.get('marks','-'), is_alt=True)
             else:
                 for idx, sub in enumerate(alt.get('subQuestions', [])):
                     y = check_new_page(y)
@@ -590,7 +594,7 @@ def generate_pdf(paper_id):
     sig_x      = 1*cm
     sig_h_top  = 1.5*cm
     sig_h_bot  = 0.7*cm
-    sig_labels = ['CC', 'M-H', 'HOD', 'BOC']
+    sig_labels = ['Course Coordinator(s)', 'Module Coordinator(s)', 'Program Coordinator', 'BoE Chairman']
 
     c.setFont("Helvetica-Bold", 10)
     c.drawString(1*cm, sig_y + sig_h_top + sig_h_bot + 0.3*cm,

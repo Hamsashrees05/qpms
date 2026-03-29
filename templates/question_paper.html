@@ -165,7 +165,7 @@
           </select>
         </div>
       </div>
-<!-- Paper Details Row 2 -->
+      <!-- Paper Details Row 2 -->
       <div class="row mt-2 g-3">
         <div class="col-md-3">
           <label class="form-label fw-bold">Department</label>
@@ -177,11 +177,12 @@
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Max Duration</label>
-                    <input type="text" name="duration" class="form-control" placeholder="e.g. 3 Hours">
+          <input type="text" name="duration" class="form-control" placeholder="e.g. 3 Hours">
         </div>
         <div class="col-md-3">
           <label class="form-label fw-bold">Max Marks</label>
-          <input type="number" name="max_marks" id="maxMarksInput" class="form-control" placeholder="e.g. 100" readonly>
+          <input type="number" name="max_marks" id="maxMarksInput"
+                 class="form-control" placeholder="Auto calculated" readonly>
           <small class="text-muted">Auto calculated</small>
         </div>
       </div>
@@ -213,10 +214,10 @@
           <td class="empty-row"></td>
         </tr>
         <tr>
-          <td>CC</td>
-          <td>M-H</td>
-          <td>HOD</td>
-          <td>BOC</td>
+          <td>Course Coordinator(s)</td>
+          <td>Module Coordinator(s)</td>
+          <td>Program Coordinator</td>
+          <td>BoE Chairman</td>
         </tr>
       </table>
     </div>
@@ -312,10 +313,11 @@
         <table class="q-table">
           <thead>
             <tr>
-              <th style="width:60px;">Sl No.</th>
+              <th style="width:55px;">Sl No.</th>
               <th class="text-col">Question</th>
+              <th style="width:100px;">Bloom's Level</th>
+              <th style="width:80px;">CO</th>
               <th style="width:80px;">Marks</th>
-              <th style="width:120px;">RBT/CO</th>
             </tr>
           </thead>
           <tbody>
@@ -326,24 +328,23 @@
                           placeholder="Enter question here..." rows="2"></textarea>
               </td>
               <td>
+                <select class="form-select form-select-sm" id="rbt_${prefix}">
+                  <option value="">-</option>
+                  <option>L1</option><option>L2</option><option>L3</option>
+                  <option>L4</option><option>L5</option><option>L6</option>
+                </select>
+              </td>
+              <td>
+                <select class="form-select form-select-sm" id="co_${prefix}">
+                  <option value="">-</option>
+                  <option>CO1</option><option>CO2</option><option>CO3</option>
+                  <option>CO4</option><option>CO5</option><option>CO6</option>
+                </select>
+              </td>
+              <td>
                 <input type="number" class="form-control marks-field"
                        id="marks_${prefix}" placeholder="10" min="1"
                        onchange="calculateTotal()">
-              </td>
-              <td>
-                <div class="d-flex align-items-center gap-1 justify-content-center">
-                  <select class="form-select form-select-sm" id="rbt_${prefix}" style="width:58px;">
-                    <option value="">-</option>
-                    <option>L1</option><option>L2</option><option>L3</option>
-                    <option>L4</option><option>L5</option><option>L6</option>
-                  </select>
-                  <span>/</span>
-                  <select class="form-select form-select-sm" id="co_${prefix}" style="width:65px;">
-                    <option value="">-</option>
-                    <option>CO1</option><option>CO2</option><option>CO3</option>
-                    <option>CO4</option><option>CO5</option><option>CO6</option>
-                  </select>
-                </div>
               </td>
             </tr>
           </tbody>
@@ -379,10 +380,11 @@
       <table class="q-table">
         <thead>
           <tr>
-            <th style="width:60px;">Sl No.</th>
+            <th style="width:55px;">Sl No.</th>
             <th class="text-col">Question</th>
+            <th style="width:100px;">Bloom's Level</th>
+            <th style="width:80px;">CO</th>
             <th style="width:80px;">Marks</th>
-            <th style="width:120px;">RBT/CO</th>
           </tr>
         </thead>
         <tbody>
@@ -402,24 +404,23 @@
             </div>
           </td>
           <td>
+            <select class="form-select form-select-sm" id="subrbt_${prefix}_${i}">
+              <option value="">-</option>
+              <option>L1</option><option>L2</option><option>L3</option>
+              <option>L4</option><option>L5</option><option>L6</option>
+            </select>
+          </td>
+          <td>
+            <select class="form-select form-select-sm" id="subco_${prefix}_${i}">
+              <option value="">-</option>
+              <option>CO1</option><option>CO2</option><option>CO3</option>
+              <option>CO4</option><option>CO5</option><option>CO6</option>
+            </select>
+          </td>
+          <td>
             <input type="number" class="form-control marks-field"
                    id="submarks_${prefix}_${i}" placeholder="5" min="1"
                    onchange="calculateTotal()">
-          </td>
-          <td>
-            <div class="d-flex align-items-center gap-1 justify-content-center">
-              <select class="form-select form-select-sm" id="subrbt_${prefix}_${i}" style="width:58px;">
-                <option value="">-</option>
-                <option>L1</option><option>L2</option><option>L3</option>
-                <option>L4</option><option>L5</option><option>L6</option>
-              </select>
-              <span>/</span>
-              <select class="form-select form-select-sm" id="subco_${prefix}_${i}" style="width:65px;">
-                <option value="">-</option>
-                <option>CO1</option><option>CO2</option><option>CO3</option>
-                <option>CO4</option><option>CO5</option><option>CO6</option>
-              </select>
-            </div>
           </td>
         </tr>
       `;
@@ -462,9 +463,9 @@
           question[key] = {
             hasSub: false,
             text:  document.getElementById(`text_${prefix}`)?.value  || '',
-            marks: document.getElementById(`marks_${prefix}`)?.value || '',
             rbt:   document.getElementById(`rbt_${prefix}`)?.value   || '',
-            co:    document.getElementById(`co_${prefix}`)?.value    || ''
+            co:    document.getElementById(`co_${prefix}`)?.value    || '',
+            marks: document.getElementById(`marks_${prefix}`)?.value || ''
           };
         } else if (hasSubYes && hasSubYes.checked) {
           const subCount = parseInt(document.getElementById(`subCount_${prefix}`)?.value || 0);
@@ -473,9 +474,9 @@
             subs.push({
               label: labels[j],
               text:  document.getElementById(`subtext_${prefix}_${j}`)?.value  || '',
-              marks: document.getElementById(`submarks_${prefix}_${j}`)?.value || '',
               rbt:   document.getElementById(`subrbt_${prefix}_${j}`)?.value   || '',
-              co:    document.getElementById(`subco_${prefix}_${j}`)?.value    || ''
+              co:    document.getElementById(`subco_${prefix}_${j}`)?.value    || '',
+              marks: document.getElementById(`submarks_${prefix}_${j}`)?.value || ''
             });
           }
           question[key] = { hasSub: true, subQuestions: subs };
@@ -489,9 +490,19 @@
 
   function submitForm(action) {
     const data = collectData();
-    document.getElementById('questionsData').value = JSON.stringify(data);
-    document.getElementById('actionInput').value   = action;
-    document.getElementById('mainForm').submit();
+    console.log('Collected data:', JSON.stringify(data));
+    if (data.length === 0) {
+      alert('Please add at least one question before submitting!');
+      return;
+    }
+    const jsonStr = JSON.stringify(data);
+    const hiddenInput = document.getElementById('questionsData');
+    hiddenInput.value = jsonStr;
+    console.log('Hidden input value:', hiddenInput.value);
+    document.getElementById('actionInput').value = action;
+    setTimeout(function() {
+      document.getElementById('mainForm').submit();
+    }, 100);
   }
 </script>
 </body>

@@ -55,7 +55,7 @@
     .q-table td.sl-col {
       font-weight: bold;
       color: #1a237e;
-      width: 60px;
+      width: 55px;
     }
     .q-table td.marks-col {
       font-weight: bold;
@@ -63,10 +63,15 @@
       background: #f3f4ff;
       width: 80px;
     }
-    .q-table td.rbtco-col {
-      width: 110px;
-      font-weight: bold;
+    .q-table td.rbt-col {
+      width: 100px;
       background: #fff8e1;
+      font-weight: bold;
+    }
+    .q-table td.co-col {
+      width: 80px;
+      background: #e8f5e9;
+      font-weight: bold;
     }
     .sub-label {
       font-weight: bold;
@@ -113,10 +118,11 @@
             <table class="q-table">
               <thead>
                 <tr>
-                  <th style="width:60px;">Sl No.</th>
+                  <th style="width:55px;">Sl No.</th>
                   <th class="text-col">Question</th>
+                  <th style="width:100px;">Bloom's Level</th>
+                  <th style="width:80px;">CO</th>
                   <th style="width:80px;">Marks</th>
-                  <th style="width:110px;">RBT/CO</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,8 +131,9 @@
                     <tr>
                       <td class="sl-col">1</td>
                       <td class="text-col">{{q.main.text}}</td>
+                      <td class="rbt-col">{{q.main.rbt or '-'}}</td>
+                      <td class="co-col">{{q.main.co or '-'}}</td>
                       <td class="marks-col">{{q.main.marks or '-'}}</td>
-                      <td class="rbtco-col">{{q.main.rbt or '-'}}/{{q.main.co or '-'}}</td>
                     </tr>
                   {% else %}
                     {% for sub in q.main.subQuestions %}
@@ -135,8 +142,9 @@
                       <td class="text-col">
                         <span class="sub-label">{{sub.label}}.</span>{{sub.text}}
                       </td>
+                      <td class="rbt-col">{{sub.rbt or '-'}}</td>
+                      <td class="co-col">{{sub.co or '-'}}</td>
                       <td class="marks-col">{{sub.marks or '-'}}</td>
-                      <td class="rbtco-col">{{sub.rbt or '-'}}/{{sub.co or '-'}}</td>
                     </tr>
                     {% endfor %}
                   {% endif %}
@@ -155,10 +163,11 @@
           <table class="q-table">
             <thead>
               <tr>
-                <th style="width:60px;">Sl No.</th>
+                <th style="width:55px;">Sl No.</th>
                 <th class="text-col">Question</th>
+                <th style="width:100px;">Bloom's Level</th>
+                <th style="width:80px;">CO</th>
                 <th style="width:80px;">Marks</th>
-                <th style="width:110px;">RBT/CO</th>
               </tr>
             </thead>
             <tbody>
@@ -167,8 +176,9 @@
                   <tr>
                     <td class="sl-col">1</td>
                     <td class="text-col">{{q.alternative.text}}</td>
+                    <td class="rbt-col">{{q.alternative.rbt or '-'}}</td>
+                    <td class="co-col">{{q.alternative.co or '-'}}</td>
                     <td class="marks-col">{{q.alternative.marks or '-'}}</td>
-                    <td class="rbtco-col">{{q.alternative.rbt or '-'}}/{{q.alternative.co or '-'}}</td>
                   </tr>
                 {% else %}
                   {% for sub in q.alternative.subQuestions %}
@@ -177,8 +187,9 @@
                     <td class="text-col">
                       <span class="sub-label">{{sub.label}}.</span>{{sub.text}}
                     </td>
+                    <td class="rbt-col">{{sub.rbt or '-'}}</td>
+                    <td class="co-col">{{sub.co or '-'}}</td>
                     <td class="marks-col">{{sub.marks or '-'}}</td>
-                    <td class="rbtco-col">{{sub.rbt or '-'}}/{{sub.co or '-'}}</td>
                   </tr>
                   {% endfor %}
                 {% endif %}
