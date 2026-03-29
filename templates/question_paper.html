@@ -125,7 +125,7 @@
     <div class="header-box text-center">
       <div class="row align-items-center">
         <div class="col-2 text-start">
-          <img src="/static/images/vtu_logo.png" height="65" onerror="this.style.display='none'">
+          <img src="/static/images/vtu_logo.png" height="65">
         </div>
         <div class="col-8">
           <h5 class="mb-0 fw-bold">BMS INSTITUTE OF TECHNOLOGY & MANAGEMENT</h5>
@@ -133,11 +133,10 @@
           <br><small class="text-muted">Yelahanka, Bengaluru - 560064</small>
         </div>
         <div class="col-2 text-end">
-          <img src="/static/images/bmsit_logo.png" height="65" onerror="this.style.display='none'">
+          <img src="/static/images/bmsit_logo.png" height="65">
         </div>
       </div>
       <hr>
-      <!-- Paper Details Row 1 -->
       <div class="row mt-2 g-3">
         <div class="col-md-3">
           <label class="form-label fw-bold">Subject</label>
@@ -165,7 +164,6 @@
           </select>
         </div>
       </div>
-      <!-- Paper Details Row 2 -->
       <div class="row mt-2 g-3">
         <div class="col-md-3">
           <label class="form-label fw-bold">Department</label>
@@ -198,14 +196,12 @@
       </div>
       <div id="questionsContainer"></div>
 
-      <!-- TOTAL MARKS -->
       <div class="mt-3">
         <div class="total-marks-box">
           Total Marks: <span id="totalMarksDisplay">0</span>
         </div>
       </div>
 
-      <!-- SIGNATURE TABLE -->
       <table class="sign-table mt-4">
         <tr>
           <td class="empty-row"></td>
@@ -222,12 +218,10 @@
       </table>
     </div>
 
-    <!-- FIXED FOOTER -->
     <div class="footer-box mt-3">
       <small>{{template.footer_text if template else 'BMS Institute of Technology & Management, Bengaluru - 560064'}}</small>
     </div>
 
-    <!-- SUBMIT BUTTONS -->
     <div class="mt-3 d-flex gap-2 pb-4">
       <button type="button" onclick="submitForm('save')" class="btn btn-secondary px-4">💾 Save as Draft</button>
       <button type="button" onclick="submitForm('submit')" class="btn btn-primary px-4">📤 Submit to HOD</button>
@@ -246,192 +240,135 @@
     const qNum = questionCount;
     const container = document.getElementById('questionsContainer');
     const wrapper = document.createElement('div');
-    wrapper.id = `wrapper_${qNum}`;
+    wrapper.id = 'wrapper_' + qNum;
     wrapper.className = 'mb-4';
-    wrapper.innerHTML = `
-      <div class="question-block">
-        <div class="question-header">
-          <span class="fw-bold">Question ${qNum}</span>
-          <button type="button" class="remove-btn" onclick="removeQuestion(${qNum})">✕ Remove</button>
-        </div>
-        <div class="question-body">
-          <div class="mb-3">
-            <label class="fw-bold">Does this question have sub questions?</label>
-            <div class="d-flex gap-3 mt-2">
-              <div class="form-check">
-                <input class="form-check-input" type="radio"
-                       name="has_sub_${qNum}_main" value="yes"
-                       onchange="buildQuestionBody(${qNum}, 'main', 'yes')">
-                <label class="form-check-label">Yes</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio"
-                       name="has_sub_${qNum}_main" value="no"
-                       onchange="buildQuestionBody(${qNum}, 'main', 'no')">
-                <label class="form-check-label">No</label>
-              </div>
-            </div>
-          </div>
-          <div id="mainBody_${qNum}"></div>
-        </div>
-      </div>
-
-      <div class="or-divider">――――――――― OR ―――――――――</div>
-
-      <div class="alternative-block">
-        <div class="fw-bold text-primary mb-3">Question ${qNum} (Alternative)</div>
-        <div class="mb-3">
-          <label class="fw-bold">Does this alternative question have sub questions?</label>
-          <div class="d-flex gap-3 mt-2">
-            <div class="form-check">
-              <input class="form-check-input" type="radio"
-                     name="has_sub_${qNum}_alt" value="yes"
-                     onchange="buildQuestionBody(${qNum}, 'alt', 'yes')">
-              <label class="form-check-label">Yes</label>
-            </div>
-            <div class="form-check">
-              <input class="form-check-input" type="radio"
-                     name="has_sub_${qNum}_alt" value="no"
-                     onchange="buildQuestionBody(${qNum}, 'alt', 'no')">
-              <label class="form-check-label">No</label>
-            </div>
-          </div>
-        </div>
-        <div id="altBody_${qNum}"></div>
-      </div>
-    `;
+    wrapper.innerHTML =
+      '<div class="question-block">' +
+        '<div class="question-header">' +
+          '<span class="fw-bold">Question ' + qNum + '</span>' +
+          '<button type="button" class="remove-btn" onclick="removeQuestion(' + qNum + ')">✕ Remove</button>' +
+        '</div>' +
+        '<div class="question-body">' +
+          '<div class="mb-3">' +
+            '<label class="fw-bold">Does this question have sub questions?</label>' +
+            '<div class="d-flex gap-3 mt-2">' +
+              '<div class="form-check">' +
+                '<input class="form-check-input" type="radio" name="has_sub_' + qNum + '_main" value="yes" onchange="buildQuestionBody(' + qNum + ', \'main\', \'yes\')">' +
+                '<label class="form-check-label">Yes</label>' +
+              '</div>' +
+              '<div class="form-check">' +
+                '<input class="form-check-input" type="radio" name="has_sub_' + qNum + '_main" value="no" onchange="buildQuestionBody(' + qNum + ', \'main\', \'no\')">' +
+                '<label class="form-check-label">No</label>' +
+              '</div>' +
+            '</div>' +
+          '</div>' +
+          '<div id="mainBody_' + qNum + '"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="or-divider">――――――――― OR ―――――――――</div>' +
+      '<div class="alternative-block">' +
+        '<div class="fw-bold text-primary mb-3">Question ' + qNum + ' (Alternative)</div>' +
+        '<div class="mb-3">' +
+          '<label class="fw-bold">Does this alternative question have sub questions?</label>' +
+          '<div class="d-flex gap-3 mt-2">' +
+            '<div class="form-check">' +
+              '<input class="form-check-input" type="radio" name="has_sub_' + qNum + '_alt" value="yes" onchange="buildQuestionBody(' + qNum + ', \'alt\', \'yes\')">' +
+              '<label class="form-check-label">Yes</label>' +
+            '</div>' +
+            '<div class="form-check">' +
+              '<input class="form-check-input" type="radio" name="has_sub_' + qNum + '_alt" value="no" onchange="buildQuestionBody(' + qNum + ', \'alt\', \'no\')">' +
+              '<label class="form-check-label">No</label>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div id="altBody_' + qNum + '"></div>' +
+      '</div>';
     container.appendChild(wrapper);
   }
 
   function buildQuestionBody(qNum, type, choice) {
-    const bodyId = type === 'main' ? `mainBody_${qNum}` : `altBody_${qNum}`;
-    const body   = document.getElementById(bodyId);
-    const prefix = `${qNum}_${type}`;
+    var bodyId = type === 'main' ? 'mainBody_' + qNum : 'altBody_' + qNum;
+    var body   = document.getElementById(bodyId);
+    var prefix = qNum + '_' + type;
+    var marksClass = type === 'main' ? 'marks-main' : 'marks-alt';
 
     if (choice === 'no') {
-      body.innerHTML = `
-        <table class="q-table">
-          <thead>
-            <tr>
-              <th style="width:55px;">Sl No.</th>
-              <th class="text-col">Question</th>
-              <th style="width:100px;">Bloom's Level</th>
-              <th style="width:80px;">CO</th>
-              <th style="width:80px;">Marks</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>1</td>
-              <td class="text-col">
-                <textarea class="form-control" id="text_${prefix}"
-                          placeholder="Enter question here..." rows="2"></textarea>
-              </td>
-              <td>
-                <select class="form-select form-select-sm" id="rbt_${prefix}">
-                  <option value="">-</option>
-                  <option>L1</option><option>L2</option><option>L3</option>
-                  <option>L4</option><option>L5</option><option>L6</option>
-                </select>
-              </td>
-              <td>
-                <select class="form-select form-select-sm" id="co_${prefix}">
-                  <option value="">-</option>
-                  <option>CO1</option><option>CO2</option><option>CO3</option>
-                  <option>CO4</option><option>CO5</option><option>CO6</option>
-                </select>
-              </td>
-              <td>
-                <input type="number" class="form-control marks-field"
-                       id="marks_${prefix}" placeholder="10" min="1"
-                       onchange="calculateTotal()">
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      `;
+      body.innerHTML =
+        '<table class="q-table">' +
+          '<thead><tr>' +
+            '<th style="width:55px;">Sl No.</th>' +
+            '<th class="text-col">Question</th>' +
+            '<th style="width:110px;">Bloom\'s Level</th>' +
+            '<th style="width:80px;">CO</th>' +
+            '<th style="width:80px;">Marks</th>' +
+          '</tr></thead>' +
+          '<tbody><tr>' +
+            '<td>1</td>' +
+            '<td class="text-col"><textarea class="form-control" id="text_' + prefix + '" placeholder="Enter question here..." rows="2"></textarea></td>' +
+            '<td><select class="form-select form-select-sm" id="rbt_' + prefix + '">' +
+              '<option value="">-</option><option>L1</option><option>L2</option><option>L3</option><option>L4</option><option>L5</option><option>L6</option>' +
+            '</select></td>' +
+            '<td><select class="form-select form-select-sm" id="co_' + prefix + '">' +
+              '<option value="">-</option><option>CO1</option><option>CO2</option><option>CO3</option><option>CO4</option><option>CO5</option><option>CO6</option>' +
+            '</select></td>' +
+            '<td><input type="number" class="form-control ' + marksClass + '" id="marks_' + prefix + '" placeholder="10" min="1" onchange="calculateTotal()"></td>' +
+          '</tr></tbody>' +
+        '</table>';
     } else {
-      body.innerHTML = `
-        <div class="d-flex align-items-center gap-2 mb-3">
-          <label class="fw-bold mb-0">How many sub questions?</label>
-          <select class="form-select w-auto" id="subCount_${prefix}">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          <button type="button" class="btn btn-navy btn-sm px-3"
-                  onclick="generateSubs(${qNum}, '${type}')">
-            Generate
-          </button>
-        </div>
-        <div id="subs_${prefix}"></div>
-      `;
+      body.innerHTML =
+        '<div class="d-flex align-items-center gap-2 mb-3">' +
+          '<label class="fw-bold mb-0">How many sub questions?</label>' +
+          '<select class="form-select w-auto" id="subCount_' + prefix + '">' +
+            '<option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option>' +
+          '</select>' +
+          '<button type="button" class="btn btn-navy btn-sm px-3" onclick="generateSubs(' + qNum + ', \'' + type + '\')">Generate</button>' +
+        '</div>' +
+        '<div id="subs_' + prefix + '"></div>';
     }
   }
 
   function generateSubs(qNum, type) {
-    const prefix    = `${qNum}_${type}`;
-    const count     = parseInt(document.getElementById(`subCount_${prefix}`).value);
-    const container = document.getElementById(`subs_${prefix}`);
-    const labels    = ['a', 'b', 'c', 'd', 'e'];
+    var prefix    = qNum + '_' + type;
+    var count     = parseInt(document.getElementById('subCount_' + prefix).value);
+    var container = document.getElementById('subs_' + prefix);
+    var labels    = ['a', 'b', 'c', 'd', 'e'];
+    var marksClass = type === 'main' ? 'marks-main' : 'marks-alt';
 
-    let html = `
-      <table class="q-table">
-        <thead>
-          <tr>
-            <th style="width:55px;">Sl No.</th>
-            <th class="text-col">Question</th>
-            <th style="width:100px;">Bloom's Level</th>
-            <th style="width:80px;">CO</th>
-            <th style="width:80px;">Marks</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
+    var html =
+      '<table class="q-table"><thead><tr>' +
+        '<th style="width:55px;">Sl No.</th>' +
+        '<th class="text-col">Question</th>' +
+        '<th style="width:110px;">Bloom\'s Level</th>' +
+        '<th style="width:80px;">CO</th>' +
+        '<th style="width:80px;">Marks</th>' +
+      '</tr></thead><tbody>';
 
-    for (let i = 0; i < count; i++) {
-      html += `
-        <tr>
-          <td>${i + 1}</td>
-          <td class="text-col">
-            <div class="d-flex align-items-start gap-2">
-              <span style="font-weight:bold;color:#1a237e;min-width:20px;padding-top:8px;">
-                ${labels[i]}.
-              </span>
-              <textarea class="form-control" id="subtext_${prefix}_${i}"
-                        placeholder="Enter sub question ${labels[i]}..." rows="2"></textarea>
-            </div>
-          </td>
-          <td>
-            <select class="form-select form-select-sm" id="subrbt_${prefix}_${i}">
-              <option value="">-</option>
-              <option>L1</option><option>L2</option><option>L3</option>
-              <option>L4</option><option>L5</option><option>L6</option>
-            </select>
-          </td>
-          <td>
-            <select class="form-select form-select-sm" id="subco_${prefix}_${i}">
-              <option value="">-</option>
-              <option>CO1</option><option>CO2</option><option>CO3</option>
-              <option>CO4</option><option>CO5</option><option>CO6</option>
-            </select>
-          </td>
-          <td>
-            <input type="number" class="form-control marks-field"
-                   id="submarks_${prefix}_${i}" placeholder="5" min="1"
-                   onchange="calculateTotal()">
-          </td>
-        </tr>
-      `;
+    for (var i = 0; i < count; i++) {
+      html +=
+        '<tr>' +
+          '<td>' + (i + 1) + '</td>' +
+          '<td class="text-col">' +
+            '<div class="d-flex align-items-start gap-2">' +
+              '<span style="font-weight:bold;color:#1a237e;min-width:20px;padding-top:8px;">' + labels[i] + '.</span>' +
+              '<textarea class="form-control" id="subtext_' + prefix + '_' + i + '" placeholder="Enter sub question ' + labels[i] + '..." rows="2"></textarea>' +
+            '</div>' +
+          '</td>' +
+          '<td><select class="form-select form-select-sm" id="subrbt_' + prefix + '_' + i + '">' +
+            '<option value="">-</option><option>L1</option><option>L2</option><option>L3</option><option>L4</option><option>L5</option><option>L6</option>' +
+          '</select></td>' +
+          '<td><select class="form-select form-select-sm" id="subco_' + prefix + '_' + i + '">' +
+            '<option value="">-</option><option>CO1</option><option>CO2</option><option>CO3</option><option>CO4</option><option>CO5</option><option>CO6</option>' +
+          '</select></td>' +
+          '<td><input type="number" class="form-control ' + marksClass + '" id="submarks_' + prefix + '_' + i + '" placeholder="5" min="1" onchange="calculateTotal()"></td>' +
+        '</tr>';
     }
     html += '</tbody></table>';
     container.innerHTML = html;
   }
 
   function calculateTotal() {
-    let total = 0;
-    document.querySelectorAll('.marks-field').forEach(input => {
+    var total = 0;
+    document.querySelectorAll('.marks-main').forEach(function(input) {
       total += parseInt(input.value) || 0;
     });
     document.getElementById('totalMarksDisplay').textContent = total;
@@ -439,44 +376,44 @@
   }
 
   function removeQuestion(qNum) {
-    document.getElementById(`wrapper_${qNum}`).remove();
+    document.getElementById('wrapper_' + qNum).remove();
     calculateTotal();
   }
 
   function collectData() {
-    const allQuestions = [];
-    const labels = ['a', 'b', 'c', 'd', 'e'];
+    var allQuestions = [];
+    var labels = ['a', 'b', 'c', 'd', 'e'];
 
-    for (let i = 1; i <= questionCount; i++) {
-      const wrapper = document.getElementById(`wrapper_${i}`);
+    for (var i = 1; i <= questionCount; i++) {
+      var wrapper = document.getElementById('wrapper_' + i);
       if (!wrapper) continue;
 
-      const question = { qNum: i, main: {}, alternative: {} };
+      var question = { qNum: i, main: {}, alternative: {} };
 
-      ['main', 'alt'].forEach(type => {
-        const prefix    = `${i}_${type}`;
-        const hasSubYes = document.querySelector(`input[name="has_sub_${i}_${type}"][value="yes"]`);
-        const hasSubNo  = document.querySelector(`input[name="has_sub_${i}_${type}"][value="no"]`);
-        const key       = type === 'main' ? 'main' : 'alternative';
+      ['main', 'alt'].forEach(function(type) {
+        var prefix    = i + '_' + type;
+        var hasSubYes = document.querySelector('input[name="has_sub_' + i + '_' + type + '"][value="yes"]');
+        var hasSubNo  = document.querySelector('input[name="has_sub_' + i + '_' + type + '"][value="no"]');
+        var key       = type === 'main' ? 'main' : 'alternative';
 
         if (hasSubNo && hasSubNo.checked) {
           question[key] = {
             hasSub: false,
-            text:  document.getElementById(`text_${prefix}`)?.value  || '',
-            rbt:   document.getElementById(`rbt_${prefix}`)?.value   || '',
-            co:    document.getElementById(`co_${prefix}`)?.value    || '',
-            marks: document.getElementById(`marks_${prefix}`)?.value || ''
+            text:  document.getElementById('text_'  + prefix) ? document.getElementById('text_'  + prefix).value : '',
+            rbt:   document.getElementById('rbt_'   + prefix) ? document.getElementById('rbt_'   + prefix).value : '',
+            co:    document.getElementById('co_'    + prefix) ? document.getElementById('co_'    + prefix).value : '',
+            marks: document.getElementById('marks_' + prefix) ? document.getElementById('marks_' + prefix).value : ''
           };
         } else if (hasSubYes && hasSubYes.checked) {
-          const subCount = parseInt(document.getElementById(`subCount_${prefix}`)?.value || 0);
-          const subs = [];
-          for (let j = 0; j < subCount; j++) {
+          var subCount = parseInt(document.getElementById('subCount_' + prefix) ? document.getElementById('subCount_' + prefix).value : 0);
+          var subs = [];
+          for (var j = 0; j < subCount; j++) {
             subs.push({
               label: labels[j],
-              text:  document.getElementById(`subtext_${prefix}_${j}`)?.value  || '',
-              rbt:   document.getElementById(`subrbt_${prefix}_${j}`)?.value   || '',
-              co:    document.getElementById(`subco_${prefix}_${j}`)?.value    || '',
-              marks: document.getElementById(`submarks_${prefix}_${j}`)?.value || ''
+              text:  document.getElementById('subtext_'   + prefix + '_' + j) ? document.getElementById('subtext_'   + prefix + '_' + j).value : '',
+              rbt:   document.getElementById('subrbt_'    + prefix + '_' + j) ? document.getElementById('subrbt_'    + prefix + '_' + j).value : '',
+              co:    document.getElementById('subco_'     + prefix + '_' + j) ? document.getElementById('subco_'     + prefix + '_' + j).value : '',
+              marks: document.getElementById('submarks_'  + prefix + '_' + j) ? document.getElementById('submarks_'  + prefix + '_' + j).value : ''
             });
           }
           question[key] = { hasSub: true, subQuestions: subs };
@@ -489,16 +426,14 @@
   }
 
   function submitForm(action) {
-    const data = collectData();
+    var data = collectData();
     console.log('Collected data:', JSON.stringify(data));
     if (data.length === 0) {
       alert('Please add at least one question before submitting!');
       return;
     }
-    const jsonStr = JSON.stringify(data);
-    const hiddenInput = document.getElementById('questionsData');
-    hiddenInput.value = jsonStr;
-    console.log('Hidden input value:', hiddenInput.value);
+    var jsonStr = JSON.stringify(data);
+    document.getElementById('questionsData').value = jsonStr;
     document.getElementById('actionInput').value = action;
     setTimeout(function() {
       document.getElementById('mainForm').submit();
